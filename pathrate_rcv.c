@@ -221,10 +221,13 @@ int main(int argc, char* argv[])
 
   
   /* Print date and path info at trace file */ 
-  localtm = time(NULL); 
-  gethostname(pack_buf, 256);
+  localtm = time(NULL);
+  
+  hostname_buf[258];
+  bzero((char*)&hostname_buf, 258);
+  gethostname(hostname_buf, 256);
   sprintf(message,"\tpathrate run from %s to %s on %s",
-          hostname, pack_buf, ctime(&localtm));
+          hostname, hostname_buf, ctime(&localtm));
   prntmsg(pathrate_fp);
   if(verbose) prntmsg(stdout);
 
