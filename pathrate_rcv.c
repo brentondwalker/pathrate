@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
   /* Print date and path info at trace file */ 
   localtm = time(NULL);
   
-  hostname_buf[258];
+  char hostname_buf[258];
   bzero((char*)&hostname_buf, 258);
   gethostname(hostname_buf, 256);
   sprintf(message,"\tpathrate run from %s to %s on %s",
