@@ -39,8 +39,9 @@ int main(int argc, char* argv[])
 
   struct sockaddr_in snd_tcp_addr, rcv_udp_addr;
 
+  socklen_t opt_len;
+
   int
-    opt_len, 
     rcv_buff_sz,
     abort_phase1=0,
     outlier_lim,
@@ -83,9 +84,9 @@ int main(int argc, char* argv[])
     pack_sz;
 
   short
-    enough_data,
+    //enough_data,
     path_overflow,
-    adr_narrow,
+    //adr_narrow,
     bad_train,
     bad_trains,
     measurs_vld_P1[NO_TRAINS_P1],
@@ -340,7 +341,7 @@ int main(int argc, char* argv[])
       sendto(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)&rcv_udp_addr,
           sizeof(rcv_udp_addr));
       gettimeofday(&first_time, (struct timezone*)0);
-      recvfrom(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)0, (int*)0);
+      recvfrom(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)0, (socklen_t*)0);
       gettimeofday(&current_time, (struct timezone*)0);
       delta = time_to_us_delta(first_time, current_time);
       min_OSdelta[j*10+i] = delta;
@@ -551,7 +552,7 @@ int main(int argc, char* argv[])
   /* Calculate average and standard deviation of last measurements,
      ignoring the five largest and the five smallest values  */
   order(measurs_P1,ord_measurs_P1,trains_msrd);
-  enough_data=1;
+  //enough_data=1;
   if (trains_msrd > 30) {
     avg_bw = get_avg(ord_measurs_P1+5, trains_msrd-10);
     std_dev = get_std(ord_measurs_P1+5, trains_msrd-10);
@@ -907,13 +908,13 @@ int main(int argc, char* argv[])
   /* Compute ADR estimate */
   adr = get_avg(ord_measurs_P2+10, no_trains-20);
   std_dev = get_std(ord_measurs_P2+10, trains_msrd-20);
-  adr_narrow=0;
+  //adr_narrow=0;
   if (no_modes_P2==1 && std_dev/adr<COEF_VAR_THR && adr/avg_bw>ADR_REDCT_THR) {
      //sprintf(message,"    The capacity estimate will be based on the ADR mode.\n");
      //prntmsg(pathrate_fp);
      //if (Verbose) prntmsg(stdout);
      adr = (modes_P2[0].mode_value_lo + modes_P2[0].mode_value_hi)/2.0;
-     adr_narrow=1;
+     //adr_narrow=1;
   }
   if (no_modes_P2 > 1){
     sprintf(message,"\n    WARNING: Phase II did not lead to unimodal distribution.\n\

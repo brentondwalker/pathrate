@@ -38,8 +38,9 @@ int main(int argc, char* argv[])
 
   struct hostent *host_rcv;
 
-  int opt_len, sock_udp, sock_tcp, ctr_strm, send_buff_sz, sleep_secs=1,
-          rcv_tcp_adrlen, 
+  socklen_t opt_len, rcv_tcp_adrlen;
+
+  int sock_udp, sock_tcp, ctr_strm, send_buff_sz, sleep_secs=1,
           i,
           ctr_code,
           ctr_code_cmnd,

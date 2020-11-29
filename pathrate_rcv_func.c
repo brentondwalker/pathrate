@@ -289,7 +289,7 @@ double get_mode(double ord_data[], short vld_data[],
     lbin_cnt, lbin_lo_ind=0, lbin_hi_ind=0,  /* left bin */
     rbin_cnt, rbin_lo_ind=0, rbin_hi_ind=0;  /* right bin */
   double
-    mode_lo, mode_hi, bin_lo,  bin_hi;
+    mode_lo, mode_hi;  //, bin_lo,  bin_hi;  // remove some unused variables
   /*Weiling: bin_toler, used as */
   double bin_cnt_toler;
 
@@ -347,8 +347,8 @@ double get_mode(double ord_data[], short vld_data[],
   bin_cnt    = curr_mode->mode_cnt;
   bin_lo_ind =  mode_lo_ind;
   bin_hi_ind =  mode_hi_ind;
-  bin_lo     =  mode_lo;
-  bin_hi     =  mode_hi;
+  //bin_lo     =  mode_lo;
+  //bin_hi     =  mode_hi;
 
   /* Weiling:  noise tolerance is determined by bin_cnt_toler, and it's
    * proportional to previous bin_cnt instead of constant BIN_NOISE_TOLER . */
@@ -401,8 +401,8 @@ double get_mode(double ord_data[], short vld_data[],
         bin_cnt     = lbin_cnt;
         bin_lo_ind  = lbin_lo_ind;
         bin_hi_ind  = lbin_hi_ind;
-        bin_lo      = ord_data[lbin_lo_ind];
-        bin_hi      = ord_data[lbin_hi_ind];
+        //bin_lo      = ord_data[lbin_lo_ind];
+        //bin_hi      = ord_data[lbin_hi_ind];
         bin_cnt_toler = BIN_CNT_TOLER_kernel_percent * (bin_cnt);
       }
       else {
@@ -430,8 +430,8 @@ double get_mode(double ord_data[], short vld_data[],
   bin_cnt    = curr_mode->mode_cnt;
   bin_lo_ind =  mode_lo_ind;
   bin_hi_ind =  mode_hi_ind;
-  bin_lo     =  mode_lo;
-  bin_hi     =  mode_hi;
+  //bin_lo     =  mode_lo;
+  //bin_hi     =  mode_hi;
 
   done=0;
   do {
@@ -480,8 +480,8 @@ double get_mode(double ord_data[], short vld_data[],
         bin_cnt     = rbin_cnt;
         bin_lo_ind  = rbin_lo_ind;
         bin_hi_ind  = rbin_hi_ind;
-        bin_lo      = ord_data[rbin_lo_ind];
-        bin_hi      = ord_data[rbin_hi_ind];
+        //bin_lo      = ord_data[rbin_lo_ind];
+        //bin_hi      = ord_data[rbin_hi_ind];
         bin_cnt_toler = BIN_CNT_TOLER_kernel_percent * (bin_cnt);
       }
       else {
@@ -513,7 +513,7 @@ double get_mode(double ord_data[], short vld_data[],
     if (verbose) prntmsg(stdout);
     print_bw(pathrate_fp, mode_hi);
     if (verbose) print_bw(stdout, mode_hi);
-    sprintf(message," - %ld measurements\n\t  Modal bell: %ld measurements - low :",
+    sprintf(message," - %d measurements\n\t  Modal bell: %d measurements - low :",
         curr_mode->mode_cnt, curr_mode->bell_cnt); prntmsg(pathrate_fp);
     if (verbose) prntmsg(stdout);
     print_bw(pathrate_fp, curr_mode->bell_lo);
@@ -617,7 +617,7 @@ int recv_train(int train_len, int * round, struct timeval *time[]) {
   send_ctr_msg(ctr_code);
 
   do {
-    if (recvfrom(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)0, (int*)0) == -1) {
+    if (recvfrom(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)0, (socklen_t*)0) == -1) {
       /* interrupted??? */
       if (errno == EINTR) {
         if (exp_pack_id==train_len+1) recv_train_done = 1;
