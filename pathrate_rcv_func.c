@@ -68,21 +68,19 @@ double get_kurtosis(double* bell_array, int size){
 }
 
 void prntmsg(FILE *fp) {
-  if (fp != NULL) {
-    fprintf(fp, "%.*s", 1024, message);
-    fflush(fp);
-  }
+  fprintf(fp, "%s", message);
+  fflush(fp);
 }
 
 /*
   Send a message through the control stream
 */
-void send_ctr_msg(long ctr_code)
+void send_ctr_msg(int32_t ctr_code) 
 {
   char ctr_buff[24];
-  long ctr_code_n = htonl(ctr_code);
-  memcpy((void*)ctr_buff, &ctr_code_n, sizeof(long));
-  if (write(sock_tcp, ctr_buff, sizeof(long)) != sizeof(long)) {
+  int32_t ctr_code_n = htonl(ctr_code);
+  memcpy((void*)ctr_buff, &ctr_code_n, sizeof(int32_t));
+  if (write(sock_tcp, ctr_buff, sizeof(int32_t)) != sizeof(int32_t)) {
     fprintf(stderr, "send control message failed:\n");
     exit(-1);
   }
@@ -93,14 +91,14 @@ void send_ctr_msg(long ctr_code)
 /*
   Receive an empty message from the control stream
 */
-long recv_ctr_msg(int ctr_strm, char *ctr_buff)
+int32_t recv_ctr_msg(int ctr_strm, char *ctr_buff)
 {
-  long ctr_code;
-  if (read(ctr_strm, ctr_buff, sizeof(long)) != sizeof(long)){
+  int32_t ctr_code;
+  if (read(ctr_strm, ctr_buff, sizeof(int32_t)) != sizeof(int32_t)){
     fprintf(stderr, "recv control message failed:\n");
     return(-1);
   }
-  memcpy(&ctr_code, ctr_buff, sizeof(long));
+  memcpy(&ctr_code, ctr_buff, sizeof(int32_t));
   return(ntohl(ctr_code));
 }
 
@@ -132,13 +130,22 @@ void termint(int exit_code) {
   send_ctr_msg(ctr_code);
   ctr_code = GAME_OVER;
   send_ctr_msg(ctr_code);
-  close(sock_tcp); close(sock_udp);
+  fclose(pathrate_fp); close(sock_tcp); close(sock_udp);
   exit(exit_code);
 }
 
 /* Successful termination. Print result.  */
 void happy_end(double bw_lo, double bw_hi)
 {
+  sprintf(message,"\n\n-------------------------------------------------\n");
+  prntmsg(pathrate_fp);
+  sprintf(message,"Final capacity estimate : ");prntmsg(pathrate_fp);
+  print_bw(pathrate_fp, bw_lo); 
+  sprintf(message," to ");prntmsg(pathrate_fp); 
+  print_bw(pathrate_fp, bw_hi); 
+  sprintf(message,"\n");prntmsg(pathrate_fp);
+  sprintf(message,"-------------------------------------------------\n\n");
+  prntmsg(pathrate_fp);
   if(verbose){
     fprintf(stdout,"-------------------------------------------------\nFinal capacity estimate : ");
     print_bw(stdout,bw_lo);
@@ -216,9 +223,9 @@ void time_copy(struct timeval time_val_old, struct timeval *time_val_new)
 /*
   Order an array of doubles using bubblesort
 */
-void order(double unord_arr[], double ord_arr[], long no_elems)
+void order(double unord_arr[], double ord_arr[], int32_t no_elems)
 {
-  long i,j;
+  int32_t i,j;
   double temp;
   for (i=0; i<no_elems; i++) ord_arr[i]=unord_arr[i];
   for (i=1; i<no_elems; i++)
@@ -234,9 +241,9 @@ void order(double unord_arr[], double ord_arr[], long no_elems)
 /*
   Compute the average of the set of measurements <data>.
 */
-double get_avg(double data[], long no_values)
+double get_avg(double data[], int32_t no_values)
 {
-  long i;
+  int32_t i;
   double sum_;
   sum_ = 0;
   for (i=0; i<no_values; i++) sum_ += data[i];
@@ -248,9 +255,9 @@ double get_avg(double data[], long no_values)
 /*
   Compute the standard deviation of the set of measurements <data>.
 */
-double get_std(double data[], long no_values)
+double get_std(double data[], int32_t no_values)
 {
-  long i;
+  int32_t i;
   double sum_, mean;
   mean = get_avg(data, no_values);
   sum_ = 0;
@@ -498,23 +505,29 @@ double get_mode(double ord_data[], short vld_data[],
   /* Report mode characteristics */
   if (curr_mode->mode_cnt > BIN_NOISE)
   {
+    sprintf(message,"\t* Mode:"); prntmsg(pathrate_fp);  
     if (verbose) prntmsg(stdout);
+    print_bw(pathrate_fp, mode_lo);
     if (verbose) print_bw(stdout, mode_lo);
+    sprintf(message,"to"); prntmsg(pathrate_fp); 
     if (verbose) prntmsg(stdout);
+    print_bw(pathrate_fp, mode_hi);
     if (verbose) print_bw(stdout, mode_hi);
     sprintf(message," - %ld measurements\n\t  Modal bell: %ld measurements - low :",
-            curr_mode->mode_cnt, curr_mode->bell_cnt);
+        curr_mode->mode_cnt, curr_mode->bell_cnt); prntmsg(pathrate_fp);
     if (verbose) prntmsg(stdout);
+    print_bw(pathrate_fp, curr_mode->bell_lo);
     if (verbose) print_bw(stdout, curr_mode->bell_lo);
-    sprintf(message,"- high :");
+    sprintf(message,"- high :"); prntmsg(pathrate_fp); 
     if (verbose) prntmsg(stdout);
+    print_bw(pathrate_fp, curr_mode->bell_hi);
     if (verbose) print_bw(stdout, curr_mode->bell_hi);
-    sprintf(message,"\n");
+    sprintf(message,"\n");prntmsg(pathrate_fp);
     if (verbose) prntmsg(stdout);
     /* Weiling: calculate bell_kurtosis*/
     curr_mode->bell_kurtosis = get_kurtosis(ord_data + bell_lo_ind , bell_hi_ind - bell_lo_ind + 1);
     if(curr_mode->bell_kurtosis == -99999){
-      sprintf(message, "\nWarning!!! bell_kurtosis == -99999\n");
+      sprintf(message, "\nWarning!!! bell_kurtosis == -99999\n"); prntmsg(pathrate_fp);
       if (verbose) prntmsg(stdout);
       return UNIMPORTANT_MODE;
     }
@@ -530,14 +543,13 @@ double get_mode(double ord_data[], short vld_data[],
 
 void sig_alrm(int signo)
 {
-  (void)signo;
-  return;
+    return;
 }
 
 void *ctr_listen(void *arg)
 {
   fd_set readset;
-  long ret_val ;
+  int32_t ret_val ;
   char ctr_buff[8];
   pthread_t  *dad_id;
 
@@ -565,9 +577,9 @@ void *ctr_listen(void *arg)
 /* Receive a complete packet train from the sender */
 int recv_train(int train_len, int * round, struct timeval *time[]) {
   int exp_pack_id=0, exp_train_id=0;
-  int pack_id, round_id, train_id;
+  int32_t pack_id, round_id, train_id;
   char pack_buf[1600];
-  long ctr_code;
+  int32_t ctr_code;
   int pack_sz = 1500;
   int bad_train=0;
   pthread_t th_id, my_id;
@@ -582,8 +594,8 @@ int recv_train(int train_len, int * round, struct timeval *time[]) {
   sigstruct.sa_flags |= SA_INTERRUPT ;
 #endif
   sigaction(SIGALRM , &sigstruct,NULL );
-
-  *time = (struct timeval *) malloc(10*(train_len+1)*sizeof(struct timeval));
+   
+  *time = (struct timeval *) malloc((train_len+1)*sizeof(struct timeval));
   if (time == NULL) {
     fprintf(stderr,"Pathrate_rcv: In recv_train: Insufficient memory\n");
     exit(-1);
@@ -605,7 +617,7 @@ int recv_train(int train_len, int * round, struct timeval *time[]) {
   send_ctr_msg(ctr_code);
 
   do {
-    if (recvfrom(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)0, (socklen_t*)0) == -1) {
+    if (recvfrom(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)0, (int*)0) == -1) {
       /* interrupted??? */
       if (errno == EINTR) {
         if (exp_pack_id==train_len+1) recv_train_done = 1;
@@ -643,11 +655,11 @@ int recv_train(int train_len, int * round, struct timeval *time[]) {
       // XXX: there was a buffer overflow if we received too many messages.
       // I doubled the size of the buffer so like fuck it.
       gettimeofday(*time+exp_pack_id, (struct timezone*)0);
-      memcpy(&pack_id, pack_buf, sizeof(int));
+      memcpy(&pack_id, pack_buf, sizeof(int32_t));
       pack_id=ntohl(pack_id);
-      memcpy(&train_id, pack_buf+sizeof(int), sizeof(int));
+      memcpy(&train_id, pack_buf+sizeof(int32_t), sizeof(int32_t));
       train_id=ntohl(train_id);
-      memcpy(&round_id, pack_buf+2*sizeof(int), sizeof(int));
+      memcpy(&round_id, pack_buf+2*sizeof(int32_t), sizeof(int32_t));
       round_id=ntohl(round_id);
 
       // printf("Pack %d, %d, %d, %d, %d\n", pack_id, train_id, round_id, exp_pack_id, exp_train_id);
@@ -697,6 +709,7 @@ int gig_path(int pack_sz, int round, int k_to_u_latency){
   double cap[300],ord_cap[300];
 
   sprintf(message,"Test with Interrupt Coalesence\n  %d Trains of length: %d \n", no_of_trains, train_len);
+  prntmsg(pathrate_fp);
   if(Verbose) prntmsg(stdout);
   for (j=0; j<no_of_trains; j++){
     int disps[300];
@@ -706,24 +719,25 @@ int gig_path(int pack_sz, int round, int k_to_u_latency){
     double tmp_cap, adr;
 
     sprintf(message,"  Train id: %d -> \n\t", j);
+    prntmsg(pathrate_fp);
     if(Verbose) prntmsg(stdout);
     ctr_code = TRAIN_LEN | (train_len<<8);
     send_ctr_msg(ctr_code);
     ctr_code=PCK_LEN | (pack_sz<<8);
     send_ctr_msg(ctr_code);
-    if ( pkt_time != NULL ) {
-      free(pkt_time);
-      pkt_time = NULL;
-    }
+    if ( pkt_time != NULL ) free (pkt_time);
     bad_train = recv_train(train_len, &round, &pkt_time);
     if (bad_train == 2) {/* train too big... try smaller */
       train_len-=20;
       sprintf(message,"Reducing train size to %d\n", train_len);
       //sprintf(message,"\n");
+      prntmsg(pathrate_fp);
       if(Verbose) prntmsg(stdout);
       if (train_len < 100 && est < 5) {
         printf("Insufficient number of packet dispersion estimates.\n");
+        fprintf(pathrate_fp,"Insufficient number of packet dispersion estimates.\n");
         printf("Probably a 1000Mbps path.\n");
+        fprintf(pathrate_fp,"Probably a 1000Mbps path.\n");
         termint(-1);
       }
     }
@@ -749,12 +763,15 @@ int gig_path(int pack_sz, int round, int k_to_u_latency){
           (time_to_us_delta(pkt_time[id[i]], pkt_time[id[i+1]]));
         if (tmp_cap >= .9*adr) {
           cap[est]=tmp_cap;
+          print_bw(pathrate_fp, cap[est++]);
           if (Verbose) print_bw(stdout, cap[est-1]);
           sprintf(message,"\n\t");
+          prntmsg(pathrate_fp);
           if(Verbose) prntmsg(stdout);
         }
       }
       sprintf(message, "Number of jump detected = %d\n", k);
+      prntmsg(pathrate_fp);
       if (Verbose) prntmsg(stdout);
     }
   }
@@ -765,7 +782,9 @@ int gig_path(int pack_sz, int round, int k_to_u_latency){
   }
   else {
     printf("Insufficient number %d of packet dispersion estimates.\n", est);
+    fprintf(pathrate_fp,"Insufficient number of packet dispersion estimates.\n");
     printf("Probably a 1000Mbps path.\n");
+    fprintf(pathrate_fp,"Probably a 1000Mbps path.\n");
     termint(-1);
   }
 

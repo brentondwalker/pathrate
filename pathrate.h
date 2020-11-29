@@ -60,8 +60,8 @@
 typedef struct {
   double mode_value_lo;	/* Lower bandwidth value (Mbps) of local mode */
   double mode_value_hi;	/* Upper bandwidth value (Mbps) of local mode */
-	long   mode_cnt;	/* number of measurements in local mode */ 
-	long   bell_cnt;	/* number of measurements in "bell" of local mode */ 
+	int32_t   mode_cnt;	/* number of measurements in local mode */ 
+	int32_t   bell_cnt;	/* number of measurements in "bell" of local mode */ 
   double bell_lo;		/* low threshold (Mbps) of bell */
 	double bell_hi;		/* high threshold (Mbps) of bell */  
 	double bell_kurtosis;		  
@@ -96,8 +96,8 @@ typedef struct {
 #define  MIN_TRAIN_SPACING	500000 	/* microseconds */	
 #define  TRAIN_SPACING_SEC	1	/* seconds */
 
-EXTERN long verbose ;
-EXTERN long Verbose ;
+EXTERN int32_t verbose ;
+EXTERN int32_t Verbose ;
 EXTERN int sock_tcp, sock_udp;
 
 

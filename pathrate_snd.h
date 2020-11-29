@@ -34,7 +34,7 @@
 #endif
 
 EXTERN int iterative;
-EXTERN long recv_ctr_msg(int ctr_strm, char *ctr_buff) ;
-EXTERN void send_ctr_msg(int ctr_strm, long ctr_code) ;
+EXTERN int32_t recv_ctr_msg(int ctr_strm, char *ctr_buff) ;
+EXTERN void send_ctr_msg(int ctr_strm, int32_t ctr_code) ;
 EXTERN double time_to_us_delta(struct timeval tv1, struct timeval tv2);
 EXTERN void help(void);

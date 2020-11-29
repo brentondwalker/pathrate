@@ -39,10 +39,8 @@ int main(int argc, char* argv[])
   struct hostent *host_rcv;
 
   int opt_len, sock_udp, sock_tcp, ctr_strm, send_buff_sz, sleep_secs=1,
+          rcv_tcp_adrlen, 
           i,
-          round_id=1, round_id_n,
-          train_id, train_id_n,
-          pack_id, pack_id_n,
           ctr_code,
           ctr_code_cmnd,
           ctr_code_data,
@@ -57,14 +55,17 @@ int main(int argc, char* argv[])
           file=0,
           errflg=0;
 
-  socklen_t rcv_tcp_adrlen;
+  int32_t round_id=1, round_id_n,
+          train_id, train_id_n,
+          pack_id, pack_id_n;
+
   char ctr_buff[8], pack_buf[MAX_PACK_SZ], random_data[MAX_PACK_SZ];
   char c, filename[256];
 
   struct timeval sleep_time, current_time, prior_sleep;
-
-  short reset_flag, done, sleep_usecs;
-
+  
+  uint16_t reset_flag, done, sleep_usecs;
+  
   time_t localtm;
 
   FILE *pathrate_fp=NULL;
@@ -74,14 +75,22 @@ int main(int argc, char* argv[])
     Check command line arguments
   */
   verbose = 1;
-  while ((c = getopt(argc, argv, "vhHqo:")) != EOF)
+  iterative = 0;
+  while ((c = getopt(argc, argv, "ivhHqo:")) != EOF)
   switch (c) {
+    case 'i':
+      iterative = 1;
+      break;
     case 'q':
       Verbose=0;
       verbose=0;
       break;
     case 'v':
       Verbose=1;
+      break;
+    case 'o':
+      file=1;
+      strcpy(filename,optarg);
       break;
     case 'h':
       help() ;
@@ -95,7 +104,7 @@ int main(int argc, char* argv[])
       errflg++;
   }
   if (errflg) {
-    (void)fprintf(stderr, "usage: pathrate_snd [-H|-h] [-q|-v]\n");
+    (void)fprintf(stderr, "usage: pathrate_snd [-i] [-H|-h] [-q|-v] [-o <filename>] \n");
     exit (-1);
   }
   if (file){
@@ -223,13 +232,13 @@ int main(int argc, char* argv[])
     /*
       Create random packet payload to deal with links that do payload compression
     */
-    srandom(0);
-    for (i=0; i<MAX_PACK_SZ-1; i++)
+    srandom(getpid());
+    for (i=0; i<MAX_PACK_SZ-1; i++) 
       random_data[i]=(char)(random()&0x000000ff);
     bzero((char*)&pack_buf, MAX_PACK_SZ);
-    memcpy(pack_buf+2*sizeof(long), random_data, (MAX_PACK_SZ-1)-2*sizeof(sizeof(long)));
-
-
+    memcpy(pack_buf+2*sizeof(int32_t), random_data, (MAX_PACK_SZ-1)-2*sizeof(sizeof(int32_t)));
+    
+    
     if (file) fprintf(pathrate_fp, "Measurements are in progress. Please wait..\n");
     if (verbose) printf("Measurements are in progress. Please wait..\n");
     fflush(stdout);
@@ -393,12 +402,12 @@ int main(int argc, char* argv[])
             * in the entire execution).  */
            train_id++;
            train_id_n = htonl(train_id);
-           memcpy(pack_buf+sizeof(int),&train_id_n,sizeof(int));
+           memcpy(pack_buf+sizeof(int32_t),&train_id_n,sizeof(int32_t));
            round_id_n = htonl(round_id);
-           memcpy(pack_buf+2*sizeof(int),&round_id_n,sizeof(int));
+           memcpy(pack_buf+2*sizeof(int32_t),&round_id_n,sizeof(int32_t));
            for (pack_id=0; pack_id <= train_len; pack_id++) {
              pack_id_n = htonl(pack_id);
-             memcpy(pack_buf, &pack_id_n, sizeof(int));
+             memcpy(pack_buf, &pack_id_n, sizeof(int32_t));
              sendto(sock_udp, pack_buf, pack_sz, 0, (struct sockaddr*)&rcv_udp_addr,
                 sizeof(rcv_udp_addr));
            }
@@ -468,5 +477,8 @@ int main(int argc, char* argv[])
          } while (trains_ackd < no_trains && !reset_flag && !done);
       } /* if (ctr_command==SEND) */
     } /* while (!done)  */
-  } while(1);  /* Repeat forever */
+  } while(iterative);  /* Repeat forever if in iterative mode */
+  
+  
+  exit(0); 
 }
